@@ -1,4 +1,15 @@
+import os
+import pytest
+
 from trio_redis import Redis
+
+
+def rel(*xs):
+    return os.path.join(os.path.abspath(os.path.dirname(__file__)), *xs)
+
+
+with open(rel("blns.txt"), "rb") as f:
+    blns = [line for line in f.readlines() if line and not line.startswith(b"#")]
 
 
 class redis:
@@ -65,3 +76,13 @@ async def test_client_can_delete_many():
 
         # I expect to be able to delete them all using one call
         assert await client.delete(*keys) == len(keys)
+
+
+@pytest.mark.parametrize("string", blns)
+async def test_client_can_set_and_retrieve_all_sorts_of_values(string):
+    # Given a Redis connection
+    async with redis() as client:
+        # If I set a naughty string
+        assert await client.set("naughty", string)
+        # Then get it back, I expect it to have the same value
+        assert await client.get("naughty") == string

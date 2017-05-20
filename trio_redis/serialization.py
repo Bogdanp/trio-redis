@@ -7,13 +7,8 @@ atom = namedtuple("atom", ("value",))
 #: Redis strings.
 escapes = {
     ord(b"\0"): rb"\x00",
-    ord(b"\a"): rb"\a",
-    ord(b"\b"): rb"\b",
-    ord(b"\f"): rb"\f",
     ord(b"\n"): rb"\n",
     ord(b"\r"): rb"\r",
-    ord(b"\t"): rb"\t",
-    ord(b"\v"): rb"\v",
     ord(b"\\"): rb"\\",
     ord(b'"'): rb'\"',
 }
