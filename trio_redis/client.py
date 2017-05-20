@@ -45,6 +45,24 @@ class Redis:
     async def delete(self, *keys):
         return await self.conn.process_command(b"DEL", *keys)
 
+    async def lindex(self, key, index):
+        return await self.conn.process_command(b"LINDEX", key, index)
+
+    async def lpush(self, key, *values):
+        return await self.conn.process_command(b"LPUSH", key, *values)
+
+    async def lpushx(self, key, value):
+        return await self.conn.process_command(b"LPUSHX", key, value)
+
+    async def rpush(self, key, *values):
+        return await self.conn.process_command(b"RPUSH", key, *values)
+
+    async def rpushx(self, key, value):
+        return await self.conn.process_command(b"RPUSHX", key, value)
+
+    async def lrange(self, key, start, stop):
+        return await self.conn.process_command(b"LRANGE", key, start, stop)
+
     async def __aenter__(self):
         return await self.connect()
 
