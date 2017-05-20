@@ -1,7 +1,16 @@
 import trio
 
-from .errors import ResponseError, ResponseTypeError
+from .errors import ProtocolError, ResponseError, ResponseTypeError
 from .serialization import atom, serialize
+
+_simple_prefix = ord("+")
+_error_prefix = ord("-")
+_integer_prefix = ord(":")
+_bulk_prefix = ord("$")
+_array_prefix = ord("*")
+
+#: The set of known Redis response prefixes.
+_known_prefixes = {_simple_prefix, _error_prefix, _integer_prefix, _bulk_prefix, _array_prefix}
 
 
 class RedisConnection:
@@ -39,20 +48,26 @@ class RedisConnection:
 
     async def process_response(self):
         data = await self.sock.recv(self.bufsize)
-        if data.startswith(b"+"):
+        if not data or data[0] not in _known_prefixes:
+            raise ProtocolError(f"Unexpected response from Redis: {data!r}.")
+
+        elif data[0] == _simple_prefix:
             return await self.process_simple_string(data)
 
-        elif data.startswith(b"-"):
+        elif data[0] == _error_prefix:
             return await self.process_error_string(data)
 
-        elif data.startswith(b":"):
-            return await self.process_integer(data)
+        elif data[0] == _integer_prefix:
+            return int(await self.process_simple_string(data))
 
-        elif data.startswith(b"$"):
+        elif data[0] == _bulk_prefix:
             return await self.process_bulk_string(data)
 
+        elif data[0] == _array_prefix:
+            return await self.process_array(data)
+
         else:
-            raise ValueError("Unexpected data from Redis: {!r}".format(data))
+            assert False, "unreachable"
 
     async def process_simple_string(self, data):
         while not data.endswith(b"\r\n"):
@@ -70,9 +85,6 @@ class RedisConnection:
 
         else:
             raise ResponseError(error)
-
-    async def process_integer(self, data):
-        return int(await self.process_simple_string(data))
 
     async def process_bulk_string(self, data):
         for i, c in enumerate(data[1:], 1):

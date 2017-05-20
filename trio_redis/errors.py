@@ -3,6 +3,12 @@ class RedisError(Exception):
     """
 
 
+class ProtocolError(RedisError):
+    """Raised when Redis responds with something that doesn't conform
+    to the protocol.
+    """
+
+
 class ResponseError(RedisError):
     """Raised when Redis returns an error response.
     """
